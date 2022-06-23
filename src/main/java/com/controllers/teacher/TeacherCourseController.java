@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
 import java.util.List;
+import java.util.Objects;
 
 @RestController
 @RequestMapping("/teacher")
@@ -25,15 +26,14 @@ public class TeacherCourseController {
     }
 
     @PostMapping("/addCource")
-    private void addCourse(@RequestBody Course course, Principal principal) {
-        course.setAuthor(teacherRepository.getFirstByUsername(principal.getName()));
-        //course.setId(null);
-        courseRepository.save(course);
+    private void addCourse(@RequestBody CourseDTO courseDTO, Principal principal) {
+        courseRepository.save(new Course(courseDTO, teacherRepository.getFirstByUsername(principal.getName())));
     }
 
     @DeleteMapping("/deleteCourse")
-    private void deleteCourse(@RequestBody Long id) {
-        courseRepository.deleteById(id);
+    private void deleteCourse(@RequestBody Long id, Principal principal) {
+        if (Objects.equals(courseRepository.getById(id).getAuthor().getUsername(), principal.getName()))
+            courseRepository.deleteById(id);
     }
 
     @GetMapping("/getAllCourses")
@@ -43,8 +43,9 @@ public class TeacherCourseController {
     }
 
     @PostMapping("/getCourse")
-    private Course getCourse(@RequestBody Long id) {
-        return courseRepository.getById(id);
+    private Course getCourse(@RequestBody Long id, Principal principal) {
+        Course course = courseRepository.getById(id);
+        if (!Objects.equals(course.getAuthor().getUsername(), principal.getName())) return null;
+        return course;
     }
-
 }

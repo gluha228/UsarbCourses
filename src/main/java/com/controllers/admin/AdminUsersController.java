@@ -35,5 +35,4 @@ public class AdminUsersController {
     public void deleteTeacher(@RequestBody Long id) {
         teacherRepository.deleteTeacherById(id);
     }
-
 }

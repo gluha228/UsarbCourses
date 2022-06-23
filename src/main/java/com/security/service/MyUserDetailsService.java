@@ -13,18 +13,16 @@ import java.util.*;
 
 @Service
 public class MyUserDetailsService implements UserDetailsService {
+
     private final TeacherRepository teacherRepository;
-    private final CourseRepository courseRepository;
     private final ProgressRepository progressRepository;
-    private final ProgressLogRepository progressLogRepository;
     private final StudentRepository studentRepository;
     private final RoleRepository roleRepository;
 
-    public MyUserDetailsService(TeacherRepository teacherRepository, CourseRepository courseRepository, ProgressRepository progressRepository, ProgressLogRepository progressLogRepository, StudentRepository studentRepository, RoleRepository roleRepository) throws InterruptedException {
+    public MyUserDetailsService(TeacherRepository teacherRepository, ProgressRepository progressRepository,
+                                StudentRepository studentRepository, RoleRepository roleRepository) {
         this.teacherRepository = teacherRepository;
-        this.courseRepository = courseRepository;
         this.progressRepository = progressRepository;
-        this.progressLogRepository = progressLogRepository;
         this.studentRepository = studentRepository;
         this.roleRepository = roleRepository;
         initializer();
@@ -32,13 +30,16 @@ public class MyUserDetailsService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        return teacherRepository.getFirstByUsername(username);
+        UserDetails userDetails = teacherRepository.getFirstByUsername(username);
+        if (userDetails == null) userDetails = studentRepository.getFirstByUsername(username);
+        return userDetails;
     }
 
-    private void initializer() throws InterruptedException {
+    //только для теста
+    private void initializer() {
         roleRepository.saveAll(Arrays.asList(new Role("ROLE_TEACHER"), new Role("ROLE_STUDENT")));
         Student student = new Student(1L, "user1", new BCryptPasswordEncoder().encode("password"), "liviu", "deleu",
-                "IT21Z", new ArrayList<>());
+                "IT21Z", new HashSet<>(Collections.singletonList(new Role("ROLE_STUDENT"))), new ArrayList<>());
         Teacher teacher = new Teacher(1L,
                 "user", new BCryptPasswordEncoder().encode("password"), "lidia", "ivanovna",
                 new HashSet<>(Collections.singletonList(new Role("ROLE_TEACHER"))), new ArrayList<>());
@@ -55,6 +56,5 @@ public class MyUserDetailsService implements UserDetailsService {
         student = studentRepository.findAll().get(0);
         progress.setAuthor(student);
         progressRepository.save(progress);
-        System.out.println("tt");
     }
 }
